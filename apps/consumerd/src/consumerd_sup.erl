@@ -24,5 +24,11 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, []} }.
+    {ok, { {one_for_one, 5, 10}, 
+            [
+             {process_worker,{consumer,start_link,[<<"marker-stat">>,spawn_process,"hello.py"]}, permanent, 5000, worker, [consumer]},
+             {http_worker,{consumer,start_link,[<<"marker-php">>,http_request,"http://127.0.0.1:5000"]}, permanent, 5000, worker, [consumer]}
+            ]
+          }
+     }.
 

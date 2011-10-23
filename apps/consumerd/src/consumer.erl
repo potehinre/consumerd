@@ -46,8 +46,9 @@ loop(Channel, ConsumerTag, TaskName, TaskFunction) ->
     end.
 
 init(QueueName, TaskType, TaskName) ->
-    process_flag(trap_exit,true),
+    io:format("I Arised ~p ~p ~n",[QueueName,TaskName]),
     inets:start(),
+    process_flag(trap_exit,true),
     {ok, Connection} = amqp_connection:start(#amqp_params_network{}),
     {ok, Channel} = amqp_connection:open_channel(Connection),
     Sub = #'basic.consume'{queue = QueueName},
@@ -62,6 +63,7 @@ init(QueueName, TaskType, TaskName) ->
     amqp_connection:close(Connection),
     ok.
 
-start_link(Queue,TaskType, TaskName) ->
-    spawn_link(consumer, init,[Queue, TaskType, TaskName]).
+start_link(Queue, TaskType, TaskName) ->
+    Pid = spawn_link(consumer, init,[Queue, TaskType, TaskName]),
+    {ok, Pid, {Queue, TaskType, TaskName}}.
 
