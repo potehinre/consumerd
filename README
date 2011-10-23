@@ -1,3 +1,3 @@
-<h1>Bunny Consumer</h1>
-<p>Bunny Consumer - is a simple daemon , who subscribes to the RabbitMQ queues,
-and for every message do task</p>
+
+Bunny Consumer - is a simple daemon , who subscribes to the RabbitMQ queues,
+and for every message do task
