@@ -3,7 +3,7 @@ import pika
 import sys
 import random
 
-connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+connection = pika.BlockingConnection(pika.ConnectionParameters(host='192.168.1.193'))
 channel = connection.channel()
 
 message = "info:" + str(random.randint(1,1000))

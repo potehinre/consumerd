@@ -1,7 +1,7 @@
 -module(consumer).
--include_lib("/usr/local/lib/erlang/lib/rabbit_common/include/rabbit.hrl").
--include_lib("/usr/local/lib/erlang/lib/rabbit_common/include/rabbit_framing.hrl").
--include("/usr/local/lib/erlang/lib/amqp_client-2.6.1/include/amqp_client.hrl").
+%%-include_lib("../../../deps/rabbit_common/include/rabbit.hrl").
+%%-include_lib("../../../deps/rabbit_common/include/rabbit_framing.hrl").
+-include("../../../deps/amqp_client/include/amqp_client.hrl").
 -compile([export_all]).
 
 spawn_process(Name, Message) ->
@@ -49,7 +49,7 @@ init(QueueName, TaskType, TaskName) ->
     io:format("I Arised ~p ~p ~n",[QueueName,TaskName]),
     inets:start(),
     process_flag(trap_exit,true),
-    {ok, Connection} = amqp_connection:start(#amqp_params_network{}),
+    {ok, Connection} = amqp_connection:start(#amqp_params_network{host="192.168.1.193",port=5672}),
     {ok, Channel} = amqp_connection:open_channel(Connection),
     Sub = #'basic.consume'{queue = QueueName},
     #'basic.consume_ok'{consumer_tag = ConsumerTag} = amqp_channel:subscribe(Channel,Sub,self()),
