@@ -24,11 +24,9 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, 
-            [
-             {process_worker,{consumer,start_link,[<<"markers-stat">>,spawn_process,"hello.py"]}, permanent, 5000, worker, [consumer]},
-             {http_worker,{consumer,start_link,[<<"markers-pusher">>,http_request,"http://127.0.0.1:5000"]}, permanent, 5000, worker, [consumer]}
-            ]
-          }
-     }.
+    {ok, {{simple_one_for_one, 5, 10},
+	  [{consumer, {consumer, start_link, []}, permanent, 5000, worker , [consumer]}]
+	 }}.
+
+
 

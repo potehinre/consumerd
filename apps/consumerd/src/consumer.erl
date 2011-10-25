@@ -1,8 +1,7 @@
 -module(consumer).
-%%-include_lib("../../../deps/rabbit_common/include/rabbit.hrl").
-%%-include_lib("../../../deps/rabbit_common/include/rabbit_framing.hrl").
 -include("../../../deps/amqp_client/include/amqp_client.hrl").
 -compile([export_all]).
+-define(SLEEP_BEFORE_RETRY,1000).
 
 spawn_process(Name, Message) ->
     Port = open_port({spawn,"python -u task/" ++ Name},
@@ -13,6 +12,7 @@ spawn_process(Name, Message) ->
 	    {Port, {data, _RespData}} ->
 	        ok;
 	    {'EXIT',Port, _Reason} ->
+	        timer:sleep(?SLEEP_BEFORE_RETRY),
 	        spawn_process(Name, Message)
     end.
 
@@ -24,7 +24,7 @@ http_request(Url, Message) ->
 	{http, {RequestId, Result}} ->
 	    case Result of
 		    {error,_Reason} ->
-		        timer:sleep(2000),
+		        timer:sleep(?SLEEP_BEFORE_RETRY),
 		        http_request(Url, Message);
 		    {_, _, <<"ok">>} ->
 		        ok
@@ -46,9 +46,8 @@ loop(Channel, ConsumerTag, TaskName, TaskFunction) ->
     end.
 
 init(QueueName, TaskType, TaskName) ->
-    io:format("I Arised ~p ~p ~n",[QueueName,TaskName]),
-    inets:start(),
     process_flag(trap_exit,true),
+    io:format("I Arised! ~p ~p ~n",[TaskType, TaskName]),
     {ok, Connection} = amqp_connection:start(#amqp_params_network{host="192.168.1.193",port=5672}),
     {ok, Channel} = amqp_connection:open_channel(Connection),
     Sub = #'basic.consume'{queue = QueueName},
