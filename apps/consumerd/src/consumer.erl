@@ -1,19 +1,28 @@
 -module(consumer).
 -include("../../../deps/amqp_client/include/amqp_client.hrl").
--compile([export_all]).
+-export([start_link/3,spawn_process/2,http_request/2,loop/4,init/3]).
+-compile(debug_info).
 -define(SLEEP_BEFORE_RETRY,1000).
+-define(TIMEOUT,5000).
 
 spawn_process(Name, Message) ->
-    Port = open_port({spawn,"python -u task/" ++ Name},
-		     [{packet, 1}, binary, use_stdio]),
+    Port = open_port({spawn,"python -u task/" ++ Name}, [{packet,4},binary, use_stdio]),
     ReqData = term_to_binary({msg, Message}), 
     port_command(Port, ReqData),
     receive
-	    {Port, {data, _RespData}} ->
-	        ok;
+	    {Port, {data, Response}} ->
+            case binary_to_term(Response) of
+                ok ->  ok;
+                _  ->
+                    timer:sleep(?SLEEP_BEFORE_RETRY),
+                    spawn_process(Name, Message)
+            end;
 	    {'EXIT',Port, _Reason} ->
+            io:format("Exited with reason ~p ~n",[_Reason]),
 	        timer:sleep(?SLEEP_BEFORE_RETRY),
 	        spawn_process(Name, Message)
+    after ?TIMEOUT ->
+        spawn_process(Name, Message)
     end.
 
 http_request(Url, Message) ->
@@ -29,7 +38,7 @@ http_request(Url, Message) ->
 		    {_, _, <<"ok">>} ->
 		        ok
 	    end
-    after 5000 ->
+    after ?TIMEOUT ->
 	    http_request(Url, Message)
     end.
 

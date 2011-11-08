@@ -15,8 +15,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    Config = [#workers{queue_name = <<"markers-stat">>, task_type = spawn_process, task_name = "hello.py", count = 4},
-	      #workers{queue_name = <<"markers-pusher">>, task_type =  http_request, task_name = "http://127.0.0.1:5000", count = 2}],
+    Config = [#workers{queue_name = <<"markers-stat">>, task_type = spawn_process, task_name = "hello.py", count = 4}],
     {ok, SupPid} = consumerd_sup:start_link(),
     inets:start(),
     start_workers(SupPid,Config),
