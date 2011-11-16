@@ -5,6 +5,13 @@
 -define(SLEEP_BEFORE_RETRY,1000).
 -define(TIMEOUT,5000).
 
+%%Поспать некоторый интервал времени и перезапустить скрипт
+retry(Port, Name, Message) ->
+    timer:sleep(?SLEEP_BEFORE_RETRY),
+    port_close(Port),
+	spawn_process(Name, Message).
+
+%%Запускает питон скрипт и передает ему сообщение
 spawn_process(Name, Message) ->
     Port = open_port({spawn,"python -u task/" ++ Name}, [{packet,4},binary, use_stdio]),
     ReqData = term_to_binary({msg, Message}), 
@@ -12,19 +19,21 @@ spawn_process(Name, Message) ->
     receive
 	    {Port, {data, Response}} ->
             case binary_to_term(Response) of
-                ok ->  ok;
+                ok ->  
+                    port_close(Port),
+                    ok;
                 _  ->
-                    timer:sleep(?SLEEP_BEFORE_RETRY),
-                    spawn_process(Name, Message)
+                    retry(Port, Name, Message)
             end;
 	    {'EXIT',Port, _Reason} ->
             io:format("Exited with reason ~p ~n",[_Reason]),
-	        timer:sleep(?SLEEP_BEFORE_RETRY),
-	        spawn_process(Name, Message)
+            retry(Port, Name, Message)
     after ?TIMEOUT ->
+        port_close(Port),
         spawn_process(Name, Message)
     end.
 
+%%Выполняет http запрос по заданному URL и передаем ему cообщение Message постом
 http_request(Url, Message) ->
     PostStr = "msg=" ++ binary_to_list(Message),
     {ok, RequestId} = httpc:request(post,{Url,[],"application/x-www-form-urlencoded", PostStr},

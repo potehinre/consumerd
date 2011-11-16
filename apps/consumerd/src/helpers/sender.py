@@ -11,9 +11,10 @@ very_huge_string = """ BLZHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD """
 
-message = "info:" + str(random.randint(1,1000)) + very_huge_string
-channel.basic_publish(exchange='markers',
-                      routing_key='',
-                      body = message)
-print " [x] Sent %r" % (message,)
+for i in range(1000):
+    message = "info:" + str(random.randint(1,1000)) + very_huge_string
+    channel.basic_publish(exchange='markers',
+                          routing_key='',
+                          body = message)
+    print " [x] Sent %r" % (message,)
 connection.close()
