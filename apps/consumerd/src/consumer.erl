@@ -9,7 +9,7 @@
 retry(Port, Name, Message) ->
     timer:sleep(?SLEEP_BEFORE_RETRY),
     port_close(Port),
-	spawn_process(Name, Message).
+    spawn_process(Name, Message).
 
 %%Запускает питон скрипт и передает ему сообщение
 spawn_process(Name, Message) ->
@@ -27,7 +27,8 @@ spawn_process(Name, Message) ->
             end;
 	    {'EXIT',Port, _Reason} ->
             io:format("Exited with reason ~p ~n",[_Reason]),
-            retry(Port, Name, Message)
+            timer:sleep(?SLEEP_BEFORE_RETRY),
+            spawn_process(Name, Message)
     after ?TIMEOUT ->
         port_close(Port),
         spawn_process(Name, Message)
@@ -68,17 +69,20 @@ init(QueueName, TaskType, TaskName) ->
     io:format("I Arised! ~p ~p ~n",[TaskType, TaskName]),
     {ok, Connection} = amqp_connection:start(#amqp_params_network{host="192.168.1.193",port=5672}),
     {ok, Channel} = amqp_connection:open_channel(Connection),
-    Sub = #'basic.consume'{queue = QueueName},
-    #'basic.consume_ok'{consumer_tag = ConsumerTag} = amqp_channel:subscribe(Channel,Sub,self()),
-    case TaskType of
-	    http_request -> 
-	        loop(Channel, ConsumerTag, TaskName, fun consumer:http_request/2);
-	    spawn_process ->
-	        loop(Channel, ConsumerTag, TaskName, fun consumer:spawn_process/2)
-    end,
-    amqp_channel:close(Channel),
-    amqp_connection:close(Connection),
-    ok.
+    try
+        Sub = #'basic.consume'{queue = QueueName},
+        #'basic.consume_ok'{consumer_tag = ConsumerTag} = amqp_channel:subscribe(Channel,Sub,self()),
+        case TaskType of
+	        http_request -> 
+	            loop(Channel, ConsumerTag, TaskName, fun consumer:http_request/2);
+	        spawn_process ->
+	            loop(Channel, ConsumerTag, TaskName, fun consumer:spawn_process/2)
+        end
+    after
+        amqp_channel:close(Channel),
+        amqp_connection:close(Connection),
+        ok
+    end.
 
 start_link(Queue, TaskType, TaskName) ->
     Pid = spawn_link(consumer, init,[Queue, TaskType, TaskName]),

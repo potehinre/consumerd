@@ -5,6 +5,7 @@ import time
 class TaskProtocol(Protocol):
     def handle_msg(self, content):
         time.sleep(1)
+        raise IOError,"Smth fucked up"
         return Atom("ok")
 
 
